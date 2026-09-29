@@ -1,0 +1,1 @@
+import EnquiryForm from "../components/EnquiryForm"; import PageHero from "../components/PageHero"; export default function Contact(){return <><PageHero tag="GET IN TOUCH" title="Have a project or a question? Let's talk." text="Send us a message and tell us how we can help."/><EnquiryForm/></>};

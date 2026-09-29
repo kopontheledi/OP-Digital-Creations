@@ -1,0 +1,1 @@
+export default function ProjectCard({p}){return <article className="project"><div className="project-visual"><span>{p.name.slice(0,2).toUpperCase()}</span></div><small>{p.type}</small><h3>{p.name}</h3><p>{p.desc}</p><b>{p.stack}</b></article>}
