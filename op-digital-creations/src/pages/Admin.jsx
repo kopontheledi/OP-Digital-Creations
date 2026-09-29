@@ -7,12 +7,14 @@ import {
 } from "firebase/auth";
 
 import {
+  addDoc,
   collection,
   deleteDoc,
   doc,
   onSnapshot,
   orderBy,
   query,
+  serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 
@@ -27,6 +29,7 @@ import {
   FolderKanban,
   Pencil,
   Plus,
+  Users,
 } from "lucide-react";
 
 import { auth, db } from "../lib/firebase";
@@ -74,11 +77,29 @@ export default function Admin() {
   const [savingProject, setSavingProject] = useState(false);
 
   // =========================================
-  // PROJECT INITIALS
+  // TEAM
   // =========================================
 
-  const getProjectInitials = (title = "") => {
-    const words = title
+  const [teamMembers, setTeamMembers] = useState([]);
+
+  const [teamForm, setTeamForm] = useState({
+    name: "",
+    role: "",
+    department: "Web Development",
+  });
+
+  const [editingTeamMember, setEditingTeamMember] =
+    useState(null);
+
+  const [savingTeamMember, setSavingTeamMember] =
+    useState(false);
+
+  // =========================================
+  // INITIALS
+  // =========================================
+
+  const getInitials = (name = "") => {
+    const words = name
       .trim()
       .split(/\s+/)
       .filter(Boolean);
@@ -97,7 +118,7 @@ export default function Admin() {
   };
 
   // =========================================
-  // CHECK AUTH STATE
+  // AUTH LISTENER
   // =========================================
 
   useEffect(() => {
@@ -134,14 +155,14 @@ export default function Admin() {
       quotesQuery,
 
       (snapshot) => {
-        const quoteData = snapshot.docs.map(
+        const data = snapshot.docs.map(
           (quoteDoc) => ({
             id: quoteDoc.id,
             ...quoteDoc.data(),
           })
         );
 
-        setQuotes(quoteData);
+        setQuotes(data);
         setLoadingQuotes(false);
       },
 
@@ -177,19 +198,59 @@ export default function Admin() {
       projectsQuery,
 
       (snapshot) => {
-        const projectData = snapshot.docs.map(
+        const data = snapshot.docs.map(
           (projectDoc) => ({
             id: projectDoc.id,
             ...projectDoc.data(),
           })
         );
 
-        setProjects(projectData);
+        setProjects(data);
       },
 
       (error) => {
         console.error(
           "Error loading projects:",
+          error
+        );
+      }
+    );
+
+    return unsubscribe;
+  }, [user]);
+
+  // =========================================
+  // LOAD TEAM
+  // =========================================
+
+  useEffect(() => {
+    if (!user) {
+      setTeamMembers([]);
+      return;
+    }
+
+    const teamQuery = query(
+      collection(db, "team"),
+      orderBy("createdAt", "asc")
+    );
+
+    const unsubscribe = onSnapshot(
+      teamQuery,
+
+      (snapshot) => {
+        const data = snapshot.docs.map(
+          (teamDoc) => ({
+            id: teamDoc.id,
+            ...teamDoc.data(),
+          })
+        );
+
+        setTeamMembers(data);
+      },
+
+      (error) => {
+        console.error(
+          "Error loading team:",
           error
         );
       }
@@ -244,7 +305,7 @@ export default function Admin() {
   };
 
   // =========================================
-  // UPDATE QUOTE STATUS
+  // QUOTE STATUS
   // =========================================
 
   const updateQuoteStatus = async (
@@ -300,7 +361,7 @@ export default function Admin() {
   };
 
   // =========================================
-  // FORMAT FIREBASE DATE
+  // FORMAT DATE
   // =========================================
 
   const formatDate = (timestamp) => {
@@ -321,7 +382,7 @@ export default function Admin() {
   };
 
   // =========================================
-  // PROJECT FORM CHANGE
+  // PROJECT FORM
   // =========================================
 
   const handleProjectChange = (event) => {
@@ -333,10 +394,6 @@ export default function Admin() {
     }));
   };
 
-  // =========================================
-  // RESET PROJECT FORM
-  // =========================================
-
   const resetProjectForm = () => {
     setProjectForm({
       title: "",
@@ -346,10 +403,6 @@ export default function Admin() {
 
     setEditingProject(null);
   };
-
-  // =========================================
-  // SAVE PROJECT
-  // =========================================
 
   const handleProjectSubmit = async (
     event
@@ -411,10 +464,6 @@ export default function Admin() {
     }
   };
 
-  // =========================================
-  // EDIT PROJECT
-  // =========================================
-
   const handleEditProject = (
     project
   ) => {
@@ -449,17 +498,12 @@ export default function Admin() {
     }, 100);
   };
 
-  // =========================================
-  // DELETE PROJECT
-  // =========================================
-
   const handleDeleteProject = async (
     projectId
   ) => {
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to delete this project?"
-      );
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this project?"
+    );
 
     if (!confirmed) return;
 
@@ -487,7 +531,169 @@ export default function Admin() {
   };
 
   // =========================================
-  // DASHBOARD COUNTS
+  // TEAM FORM
+  // =========================================
+
+  const handleTeamChange = (event) => {
+    const { name, value } = event.target;
+
+    setTeamForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const resetTeamForm = () => {
+    setTeamForm({
+      name: "",
+      role: "",
+      department: "Web Development",
+    });
+
+    setEditingTeamMember(null);
+  };
+
+  const handleTeamSubmit = async (
+    event
+  ) => {
+    event.preventDefault();
+
+    const isEditing = Boolean(
+      editingTeamMember
+    );
+
+    try {
+      setSavingTeamMember(true);
+
+      const memberData = {
+        name:
+          teamForm.name.trim(),
+
+        role:
+          teamForm.role.trim(),
+
+        department:
+          teamForm.department,
+      };
+
+      if (isEditing) {
+        await updateDoc(
+          doc(
+            db,
+            "team",
+            editingTeamMember.id
+          ),
+          {
+            ...memberData,
+            updatedAt:
+              serverTimestamp(),
+          }
+        );
+      } else {
+        await addDoc(
+          collection(
+            db,
+            "team"
+          ),
+          {
+            ...memberData,
+            createdAt:
+              serverTimestamp(),
+
+            updatedAt:
+              serverTimestamp(),
+          }
+        );
+      }
+
+      resetTeamForm();
+
+      alert(
+        isEditing
+          ? "Team member updated successfully."
+          : "Team member added successfully."
+      );
+    } catch (error) {
+      console.error(
+        "Team save error:",
+        error
+      );
+
+      alert(
+        "Could not save the team member."
+      );
+    } finally {
+      setSavingTeamMember(false);
+    }
+  };
+
+  const handleEditTeamMember = (
+    member
+  ) => {
+    setEditingTeamMember(member);
+
+    setTeamForm({
+      name:
+        member.name || "",
+
+      role:
+        member.role || "",
+
+      department:
+        member.department ||
+        "Web Development",
+    });
+
+    setTimeout(() => {
+      document
+        .getElementById(
+          "team-form"
+        )
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+    }, 100);
+  };
+
+  const handleDeleteTeamMember = async (
+    memberId
+  ) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this team member?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteDoc(
+        doc(
+          db,
+          "team",
+          memberId
+        )
+      );
+
+      if (
+        editingTeamMember?.id ===
+        memberId
+      ) {
+        resetTeamForm();
+      }
+    } catch (error) {
+      console.error(
+        "Team delete error:",
+        error
+      );
+
+      alert(
+        "Could not delete this team member."
+      );
+    }
+  };
+
+  // =========================================
+  // QUOTE COUNTS
   // =========================================
 
   const newQuotes = quotes.filter(
@@ -511,7 +717,7 @@ export default function Admin() {
     ).length;
 
   // =========================================
-  // LOADING
+  // LOADING AUTH
   // =========================================
 
   if (checkingAuth) {
@@ -523,7 +729,7 @@ export default function Admin() {
   }
 
   // =========================================
-  // LOGIN SCREEN
+  // LOGIN
   // =========================================
 
   if (!user) {
@@ -549,7 +755,7 @@ export default function Admin() {
 
           <p>
             Sign in to manage enquiries,
-            projects and website content.
+            projects and your team.
           </p>
 
           <form
@@ -562,12 +768,9 @@ export default function Admin() {
               <input
                 type="email"
                 value={email}
-                onChange={(
-                  event
-                ) =>
+                onChange={(event) =>
                   setEmail(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="admin@example.com"
@@ -582,12 +785,9 @@ export default function Admin() {
               <input
                 type="password"
                 value={password}
-                onChange={(
-                  event
-                ) =>
+                onChange={(event) =>
                   setPassword(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 placeholder="Your password"
@@ -605,13 +805,9 @@ export default function Admin() {
             <button
               type="submit"
               className="primary admin-login-button"
-              disabled={
-                loggingIn
-              }
+              disabled={loggingIn}
             >
-              <LogIn
-                size={18}
-              />
+              <LogIn size={18} />
 
               {loggingIn
                 ? "Signing in..."
@@ -627,15 +823,13 @@ export default function Admin() {
   }
 
   // =========================================
-  // ADMIN DASHBOARD
+  // DASHBOARD
   // =========================================
 
   return (
     <main className="admin-dashboard">
 
-      {/* =====================================
-          HEADER
-      ===================================== */}
+      {/* HEADER */}
 
       <header className="admin-header">
 
@@ -652,7 +846,7 @@ export default function Admin() {
           <p>
             Manage enquiries,
             portfolio projects and
-            website content.
+            team members.
           </p>
 
         </div>
@@ -660,27 +854,19 @@ export default function Admin() {
         <button
           type="button"
           className="admin-logout"
-          onClick={
-            handleLogout
-          }
+          onClick={handleLogout}
         >
-          <LogOut
-            size={17}
-          />
-
+          <LogOut size={17} />
           Sign out
         </button>
 
       </header>
 
-      {/* =====================================
-          STATS
-      ===================================== */}
+      {/* STATS */}
 
       <section className="admin-stats">
 
         <div className="admin-stat-card">
-
           <span>
             Total enquiries
           </span>
@@ -688,49 +874,36 @@ export default function Admin() {
           <strong>
             {quotes.length}
           </strong>
-
         </div>
 
         <div className="admin-stat-card">
-
-          <span>
-            New
-          </span>
+          <span>New</span>
 
           <strong>
             {newQuotes}
           </strong>
-
         </div>
 
         <div className="admin-stat-card">
-
-          <span>
-            Contacted
-          </span>
+          <span>Contacted</span>
 
           <strong>
             {contactedQuotes}
           </strong>
-
         </div>
 
         <div className="admin-stat-card">
-
-          <span>
-            Completed
-          </span>
+          <span>Completed</span>
 
           <strong>
             {completedQuotes}
           </strong>
-
         </div>
 
       </section>
 
       {/* =====================================
-          QUOTATION REQUESTS
+          ENQUIRIES
       ===================================== */}
 
       <section className="admin-enquiries">
@@ -738,7 +911,6 @@ export default function Admin() {
         <div className="admin-section-heading">
 
           <div>
-
             <small>
               ENQUIRIES
             </small>
@@ -746,7 +918,6 @@ export default function Admin() {
             <h2>
               Quotation requests
             </h2>
-
           </div>
 
           <span>
@@ -775,9 +946,8 @@ export default function Admin() {
             </h3>
 
             <p>
-              New quotation
-              requests will appear
-              here.
+              New quotation requests
+              will appear here.
             </p>
 
           </div>
@@ -793,8 +963,6 @@ export default function Admin() {
                   className="admin-quote-card"
                   key={quote.id}
                 >
-
-                  {/* QUOTE HEADER */}
 
                   <div className="admin-quote-top">
 
@@ -839,8 +1007,6 @@ export default function Admin() {
 
                   </div>
 
-                  {/* CONTACT */}
-
                   <div className="quote-contact">
 
                     <a
@@ -869,12 +1035,9 @@ export default function Admin() {
 
                   </div>
 
-                  {/* DETAILS */}
-
                   <div className="quote-details">
 
                     <div>
-
                       <span>
                         Service
                       </span>
@@ -883,13 +1046,10 @@ export default function Admin() {
                         {quote.service ||
                           "General enquiry"}
                       </strong>
-
                     </div>
 
                     {quote.budget && (
-
                       <div>
-
                         <span>
                           Budget
                         </span>
@@ -897,15 +1057,11 @@ export default function Admin() {
                         <strong>
                           {quote.budget}
                         </strong>
-
                       </div>
-
                     )}
 
                     {quote.timeline && (
-
                       <div>
-
                         <span>
                           Timeline
                         </span>
@@ -913,14 +1069,10 @@ export default function Admin() {
                         <strong>
                           {quote.timeline}
                         </strong>
-
                       </div>
-
                     )}
 
                   </div>
-
-                  {/* MESSAGE */}
 
                   <div className="quote-message">
 
@@ -933,8 +1085,6 @@ export default function Admin() {
                     </p>
 
                   </div>
-
-                  {/* STATUS */}
 
                   <div className="quote-actions">
 
@@ -1019,7 +1169,7 @@ export default function Admin() {
       </section>
 
       {/* =====================================
-          PROJECT CMS
+          PROJECTS
       ===================================== */}
 
       <section className="admin-projects-section">
@@ -1027,7 +1177,6 @@ export default function Admin() {
         <div className="admin-section-heading">
 
           <div>
-
             <small>
               OP DIGITAL CREATIONS
               PORTFOLIO
@@ -1036,7 +1185,6 @@ export default function Admin() {
             <h2>
               Projects
             </h2>
-
           </div>
 
           <span>
@@ -1050,9 +1198,7 @@ export default function Admin() {
 
         <div className="admin-project-layout">
 
-          {/* =================================
-              ADD / EDIT PROJECT FORM
-          ================================= */}
+          {/* PROJECT FORM */}
 
           <form
             id="project-form"
@@ -1065,13 +1211,9 @@ export default function Admin() {
             <div className="admin-project-form-heading">
 
               {editingProject ? (
-                <Pencil
-                  size={20}
-                />
+                <Pencil size={20} />
               ) : (
-                <Plus
-                  size={20}
-                />
+                <Plus size={20} />
               )}
 
               <h3>
@@ -1082,10 +1224,7 @@ export default function Admin() {
 
             </div>
 
-            {/* PROJECT NAME */}
-
             <label>
-
               Project name
 
               <input
@@ -1100,23 +1239,17 @@ export default function Admin() {
                 }
                 placeholder="MJ Bakery Delights"
               />
-
             </label>
-
-            {/* PROJECT PREVIEW */}
 
             <div className="admin-project-initial-preview">
 
               <div className="project-initials">
-
-                {getProjectInitials(
+                {getInitials(
                   projectForm.title
                 )}
-
               </div>
 
               <div>
-
                 <span>
                   PROJECT PREVIEW
                 </span>
@@ -1125,15 +1258,11 @@ export default function Admin() {
                   {projectForm.title ||
                     "Project name"}
                 </strong>
-
               </div>
 
             </div>
 
-            {/* DESCRIPTION */}
-
             <label>
-
               Description
 
               <textarea
@@ -1146,15 +1275,11 @@ export default function Admin() {
                 onChange={
                   handleProjectChange
                 }
-                placeholder="Tell visitors about the project, what was created and how it helps the business..."
+                placeholder="Tell visitors about the project..."
               />
-
             </label>
 
-            {/* TECH STACK */}
-
             <label>
-
               Tech stack
 
               <input
@@ -1173,10 +1298,7 @@ export default function Admin() {
                 Separate technologies
                 with commas.
               </small>
-
             </label>
-
-            {/* BUTTONS */}
 
             <div className="admin-project-form-actions">
 
@@ -1189,35 +1311,26 @@ export default function Admin() {
               >
 
                 {savingProject ? (
-
                   "Saving..."
-
                 ) : editingProject ? (
-
                   <>
                     <Pencil
                       size={17}
                     />
-
                     Save changes
                   </>
-
                 ) : (
-
                   <>
                     <Plus
                       size={17}
                     />
-
                     Add project
                   </>
-
                 )}
 
               </button>
 
               {editingProject && (
-
                 <button
                   type="button"
                   className="secondary"
@@ -1227,16 +1340,13 @@ export default function Admin() {
                 >
                   Cancel
                 </button>
-
               )}
 
             </div>
 
           </form>
 
-          {/* =================================
-              PROJECT LIST
-          ================================= */}
+          {/* PROJECT LIST */}
 
           <div className="admin-project-list">
 
@@ -1253,10 +1363,9 @@ export default function Admin() {
                 </h3>
 
                 <p>
-                  Add the first
+                  Add your first
                   OP Digital Creations
-                  project using the
-                  form.
+                  project.
                 </p>
 
               </div>
@@ -1271,26 +1380,19 @@ export default function Admin() {
                     className="admin-project-card"
                   >
 
-                    {/* INITIALS PLACEHOLDER */}
-
                     <div className="admin-project-placeholder">
 
                       <div className="project-initials">
-
-                        {getProjectInitials(
+                        {getInitials(
                           project.title
                         )}
-
                       </div>
 
                       <span>
-                        OP DIGITAL
-                        CREATIONS
+                        OP DIGITAL CREATIONS
                       </span>
 
                     </div>
-
-                    {/* PROJECT CONTENT */}
 
                     <div className="admin-project-card-content">
 
@@ -1299,12 +1401,8 @@ export default function Admin() {
                       </h3>
 
                       <p>
-                        {
-                          project.description
-                        }
+                        {project.description}
                       </p>
-
-                      {/* TECH STACK */}
 
                       {Array.isArray(
                         project.techStack
@@ -1319,21 +1417,17 @@ export default function Admin() {
                                 tech,
                                 index
                               ) => (
-
                                 <span
                                   key={`${tech}-${index}`}
                                 >
                                   {tech}
                                 </span>
-
                               )
                             )}
 
                           </div>
 
                         )}
-
-                      {/* ACTIONS */}
 
                       <div className="admin-project-card-actions">
 
@@ -1348,7 +1442,6 @@ export default function Admin() {
                           <Pencil
                             size={15}
                           />
-
                           Edit
                         </button>
 
@@ -1364,11 +1457,292 @@ export default function Admin() {
                           <Trash2
                             size={15}
                           />
-
                           Delete
                         </button>
 
                       </div>
+
+                    </div>
+
+                  </article>
+
+                )
+              )
+
+            )}
+
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* =====================================
+          TEAM
+      ===================================== */}
+
+      <section className="admin-team-section">
+
+        <div className="admin-section-heading">
+
+          <div>
+            <small>
+              OUR TEAM
+            </small>
+
+            <h2>
+              Team members
+            </h2>
+          </div>
+
+          <span>
+            {teamMembers.length}{" "}
+            {teamMembers.length === 1
+              ? "member"
+              : "members"}
+          </span>
+
+        </div>
+
+        <div className="admin-team-layout">
+
+          {/* TEAM FORM */}
+
+          <form
+            id="team-form"
+            className="admin-team-form"
+            onSubmit={
+              handleTeamSubmit
+            }
+          >
+
+            <div className="admin-project-form-heading">
+
+              {editingTeamMember ? (
+                <Pencil
+                  size={20}
+                />
+              ) : (
+                <Plus
+                  size={20}
+                />
+              )}
+
+              <h3>
+                {editingTeamMember
+                  ? "Edit team member"
+                  : "Add team member"}
+              </h3>
+
+            </div>
+
+            <label>
+              Full name
+
+              <input
+                type="text"
+                name="name"
+                value={
+                  teamForm.name
+                }
+                onChange={
+                  handleTeamChange
+                }
+                placeholder="Kopo Ntheledi"
+                required
+              />
+            </label>
+
+            <label>
+              Role
+
+              <input
+                type="text"
+                name="role"
+                value={
+                  teamForm.role
+                }
+                onChange={
+                  handleTeamChange
+                }
+                placeholder="Web Developer"
+                required
+              />
+            </label>
+
+            <label>
+              Department
+
+              <select
+                name="department"
+                value={
+                  teamForm.department
+                }
+                onChange={
+                  handleTeamChange
+                }
+                required
+              >
+                <option value="Web Development">
+                  Web Development
+                </option>
+
+                <option value="Social Media">
+                  Social Media
+                </option>
+              </select>
+            </label>
+
+            {/* TEAM PREVIEW */}
+
+            <div className="admin-team-preview">
+
+              <div className="admin-team-avatar">
+                {getInitials(
+                  teamForm.name
+                )}
+              </div>
+
+              <div>
+
+                <strong>
+                  {teamForm.name ||
+                    "Team member"}
+                </strong>
+
+                <span>
+                  {teamForm.role ||
+                    "Role"}
+                </span>
+
+                <small>
+                  {teamForm.department}
+                </small>
+
+              </div>
+
+            </div>
+
+            <div className="admin-project-form-actions">
+
+              <button
+                type="submit"
+                className="primary"
+                disabled={
+                  savingTeamMember
+                }
+              >
+
+                {savingTeamMember
+                  ? "Saving..."
+                  : editingTeamMember
+                  ? "Save changes"
+                  : "Add team member"}
+
+              </button>
+
+              {editingTeamMember && (
+
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={
+                    resetTeamForm
+                  }
+                >
+                  Cancel
+                </button>
+
+              )}
+
+            </div>
+
+          </form>
+
+          {/* TEAM LIST */}
+
+          <div className="admin-team-list">
+
+            {teamMembers.length === 0 ? (
+
+              <div className="admin-empty">
+
+                <Users size={32} />
+
+                <h3>
+                  No team members yet
+                </h3>
+
+                <p>
+                  Add the first
+                  OP Digital Creations
+                  team member.
+                </p>
+
+              </div>
+
+            ) : (
+
+              teamMembers.map(
+                (member) => (
+
+                  <article
+                    className="admin-team-card"
+                    key={member.id}
+                  >
+
+                    <div className="admin-team-avatar">
+                      {getInitials(
+                        member.name
+                      )}
+                    </div>
+
+                    <div className="admin-team-info">
+
+                      <small>
+                        {member.department}
+                      </small>
+
+                      <h3>
+                        {member.name}
+                      </h3>
+
+                      <p>
+                        {member.role}
+                      </p>
+
+                    </div>
+
+                    <div className="admin-team-actions">
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEditTeamMember(
+                            member
+                          )
+                        }
+                      >
+                        <Pencil
+                          size={15}
+                        />
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={() =>
+                          handleDeleteTeamMember(
+                            member.id
+                          )
+                        }
+                      >
+                        <Trash2
+                          size={15}
+                        />
+                        Delete
+                      </button>
 
                     </div>
 

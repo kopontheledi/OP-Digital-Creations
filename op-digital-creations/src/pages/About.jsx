@@ -111,7 +111,7 @@ export default function About() {
 
         <div className="portrait">
           <img
-            src="/images/kopo-ntheledi-img.jpg"
+            src="/Images/kopo-ntheledi-img.jpg"
             alt="Kopo Ntheledi - Founder of OP Digital Creations"
             className="founder-image"
           />
