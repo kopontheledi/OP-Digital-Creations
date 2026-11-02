@@ -7,7 +7,7 @@ export default function Quote() {
       <PageHero
         tag="GET A QUOTE"
         title="Tell us what you want to build."
-        text="Give us a little information about your project and we'll have what we need to prepare a tailored quotation."
+        text="Give us a little information about your project and we'll have what you need to prepare a tailored quotation."
       />
 
       <EnquiryForm quote />

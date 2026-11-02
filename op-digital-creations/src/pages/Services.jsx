@@ -34,7 +34,7 @@ export default function Services() {
       <PageHero
         tag="OUR SERVICES"
         title="Everything your business needs to grow online."
-        text="From your first website to campaigns and performance tracking, we help connect the pieces."
+        text="From building ypur first website to managing campaigns and tracking performance, we bring every piece of your digital journey together."
       />
 
       {/* SERVICES */}

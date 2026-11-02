@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="footer-brand">
   <Link to="/" className="footer-logo-link">
     <img
-      src="/Images/op-digital-creations-logo.png"
+      src="/Images/op-digital-creations-logo-bright.png"
       alt="OP Digital Creations"
       className="footer-logo"
     />
@@ -37,17 +37,17 @@ export default function Footer() {
       <div>
         <b>Services</b>
 
-        <span>
+        <Link to="/services">
           Web Development
-        </span>
+        </Link>
 
-        <span>
+        <Link to="/services">
           Social Media Campaigns
-        </span>
+        </Link>
 
-        <span>
+        <Link to="/services">
           Google Analytics
-        </span>
+        </Link>
       </div>
 
       <div>

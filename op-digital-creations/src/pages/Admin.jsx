@@ -740,7 +740,7 @@ export default function Admin() {
 
           <div className="admin-login-brand">
             <img
-              src="/images/op-digital-creations-logo.png"
+              src="/Images/op-digital-creations-logo.png"
               alt="OP Digital Creations"
             />
           </div>
