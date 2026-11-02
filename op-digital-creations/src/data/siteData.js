@@ -21,7 +21,7 @@ export const projects = [
     stack: 'JavaScript • HTML • CSS'
   },
   {
-    name: 'BLAQDawg Vintage',
+    name: 'Blaq Dawg Vintage',
     type: 'E-commerce Website',
     desc: 'An online clothing and hair-weave store where customers can browse collections, filter products, add items to their cart, place orders and submit proof of payment. Includes an admin dashboard for product, inventory and order management.',
     stack: 'React.js • Vite • JavaScript • Tailwind CSS '
