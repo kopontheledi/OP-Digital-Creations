@@ -12,12 +12,34 @@ export const pricing=[
 {name:'E-commerce',price:'From R7,500',features:['Online product catalogue','Cart & checkout','Payment-ready setup','Order/customer flow','Analytics setup']},
 {name:'Custom Web App',price:'Quoted per project',features:['Custom functionality','Database integration','Authentication if needed','Admin tools','Deployment support']}
 ];
-export const projects=[
-{name:'MJ Bakery Delights',type:'Business Website',desc:'Cake gallery, specials, quote workflow, admin content tools and WhatsApp enquiries.',stack:'React • Supabase'},
-{name:'Honey & Home Co',type:'E-commerce',desc:'Warm homeware storefront with product galleries, cart, checkout and WhatsApp enquiries.',stack:'React • Firebase • Cloudinary'},
-{name:'Gift Registry',type:'Web App',desc:'Live gift registry where guests can reserve gifts and the owner manages items through an admin area.',stack:'HTML • CSS • JavaScript • Supabase'},
-{name:'Mama Community App',type:'Community Platform',desc:'A postpartum support platform with articles, profiles, community features and an admin CMS.',stack:'Next.js • Supabase'}
+
+export const projects = [
+  {
+    name: 'Our Little Miracle',
+    type: 'Private Baby Gallery',
+    desc: 'A private photo gallery created to preserve and share special baby moments with family. Features a pink and blue theme, photo captions and a shared gallery experience.',
+    stack: 'JavaScript • HTML • CSS'
+  },
+  {
+    name: 'BLAQDawg Vintage',
+    type: 'E-commerce Website',
+    desc: 'An online clothing and hair-weave store where customers can browse collections, filter products, add items to their cart, place orders and submit proof of payment. Includes an admin dashboard for product, inventory and order management.',
+    stack: 'React.js • Vite • JavaScript • Tailwind CSS '
+  },
+  {
+    name: 'Honey & Home Co',
+    type: 'E-commerce Website',
+    desc: 'An online homeware store where customers can browse products, explore product galleries, add items to their shopping cart and submit purchase enquiries. Includes product and content management functionality.',
+    stack: 'React.js • JavaScript • CSS'
+  },
+  {
+    name: 'FamilyRoots Grounds & Landscaping',
+    type: 'Business Website',
+    desc: 'A professional business website for a family-owned landscaping and grounds maintenance company. Showcases services including grass cutting, tree trimming, garden maintenance and commercial grounds management.',
+    stack: 'React.js • Vite • JavaScript • Tailwind CSS • Firebase • Firebase Hosting'
+  }
 ];
+
 // export const team={web:[{name:'Kopo Ntheledi',role:'Founder & Web Developer',initials:'KN'},{name:'Web Developer',role:'Development Team',initials:'WD'}],social:[{name:'Social Media Specialist',role:'Campaigns & Content',initials:'SM'},{name:'Creative',role:'Digital Creative',initials:'DC'}]};
 
 export const team={web:[{name:'Kopo Ntheledi',role:'Founder & Web Developer',initials:'KN'},{name:'Developer',role:'Development Team',initials:'WD'}],social:[{name:'Social Media Specialist',role:'Campaigns & Content',initials:'SM'},{name:'Creative',role:'Digital Creative',initials:'DC'}]};
