@@ -163,15 +163,8 @@ export default function Home() {
       </section>
 
      {/* FOUNDER */}
+{/* FOUNDER */}
 <section className="founder">
-  <div className="portrait">
-    <img
-      src="/Images/kopo-ntheledi-img.jpg"
-      alt="Kopo Ntheledi - Founder of OP Digital Creations"
-      className="founder-image"
-    />
-  </div>
-
   <div>
     <small>FROM THE FOUNDER</small>
 
@@ -191,7 +184,7 @@ export default function Home() {
       digital solutions that help businesses move forward.
     </p>
 
-    <b>— Kopo Ntheledi, Founder</b>
+    <b>— Founder, OP Digital Creations</b>
   </div>
 </section>
 
